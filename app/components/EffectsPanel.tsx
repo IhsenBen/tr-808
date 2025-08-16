@@ -2,6 +2,10 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import EffectKnob from "@components/EffectKnob";
 import { EffectSettings } from "@/lib/effects";
+import { Display } from "./Display";
+import { useSelector, useDispatch } from "react-redux";
+import { toggleEffects } from "@/lib/features/effect/effectSlice";
+import { RootState, AppDispatch } from "@/lib/store";
 
 interface EffectsPanelProps {
   drumName: string;
@@ -22,50 +26,66 @@ export const EffectsPanel: React.FC<EffectsPanelProps> = ({
 }) => {
   const [showCopyMenu, setShowCopyMenu] = React.useState(false);
 
+  const dispatch = useDispatch<AppDispatch>();
+  const { effectsEnabled } = useSelector((state: RootState) => state.effects);
   return (
-    <div className="bg-gray-800 p-6 rounded-lg shadow-xl min-w-[320px]">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xl font-bold text-orange-500">
-          {drumName.toUpperCase()} EFFECTS
-        </h3>
+    <div className="p-15 rounded-lg  min-w-[320px]">
+      <div>
+        <Display padname={drumName.toUpperCase()} />
 
         <div className="flex gap-2">
-          <div className="relative">
-            <Button
-              size="sm"
-              onClick={() => setShowCopyMenu(!showCopyMenu)}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              Copy
-            </Button>
+          <div className="flex-1">
+            <div className="flex flex-row items-center justify-center gap-3   rounded-lg ">
+              <Button
+                size="sm"
+                onClick={onReset}
+                className="tr808-btn-3d reset-btn mt-4"
+              >
+                Reset
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => setShowCopyMenu(!showCopyMenu)}
+                className="tr808-btn-3d copy-btn mt-4"
+              >
+                Copy
+              </Button>
+            </div>
+            <div className="flex items-center justify-center gap-3 p-3 ">
+              <span className="text-xs font-semibold tracking-widest uppercase mr-2 ">
+                Effects:
+              </span>
+              <div className="flex items-center space-x-2">
+                <Button
+                  onClick={() => dispatch(toggleEffects())}
+                  className={`tr808-switch ${effectsEnabled ? "is-on" : "is-off"}`}
+                ></Button>
 
-            {showCopyMenu && (
-              <div className="absolute right-0 top-full mt-2 bg-gray-700 rounded-lg shadow-lg z-10 min-w-[120px]">
-                {availableDrums
-                  .filter((drum) => drum !== drumName)
-                  .map((drum) => (
-                    <button
-                      key={drum}
-                      onClick={() => {
-                        onCopyFrom(drum);
-                        setShowCopyMenu(false);
-                      }}
-                      className="block w-full text-left px-3 py-2 hover:bg-gray-600 first:rounded-t-lg last:rounded-b-lg"
-                    >
-                      From {drum.toUpperCase()}
-                    </button>
-                  ))}
+                <div className="flex flex-col text-xs font-mono text-white gap-5">
+                  <span>ON</span>
+                  <span>OFF</span>
+                </div>
               </div>
-            )}
+            </div>
           </div>
-
-          <Button
-            size="sm"
-            onClick={onReset}
-            className="bg-gray-600 hover:bg-gray-700"
-          >
-            Reset
-          </Button>
+          {showCopyMenu && (
+            <div className="absolute right-0 top-full mt-2 bg-gray-700 rounded-lg shadow-lg z-10 min-w-[120px]">
+              {availableDrums
+                .filter((drum) => drum !== drumName)
+                .map((drum) => (
+                  <button
+                    key={drum}
+                    onClick={() => {
+                      onCopyFrom(drum);
+                      setShowCopyMenu(false);
+                    }}
+                    className="block w-full text-left px-3 py-2 hover:bg-gray-600 first:rounded-t-lg last:rounded-b-lg"
+                  >
+                    From {drum.toUpperCase()}
+                  </button>
+                ))}
+            </div>
+          )}
         </div>
       </div>
 

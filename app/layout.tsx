@@ -1,5 +1,6 @@
 import { serifGothic } from "@lib/fonts";
 import "./globals.css";
+import "./App.css";
 
 export default function RootLayout({
   children,

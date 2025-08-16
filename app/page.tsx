@@ -8,7 +8,6 @@ import {
   setIsPlaying,
   setIsAudioReady,
   setAreSamplesLoaded,
-  setBpm,
   resetPattern,
 } from "@features/sequencer/sequencerSlice";
 import {
@@ -19,11 +18,14 @@ import {
 } from "@features/effect/effectSlice";
 import { DrumEffectsChain, EffectSettings } from "@/lib/effects";
 import { SequencerGrid } from "@components/SequencerGrid";
-import { DrumSelectorKnob } from "@components/DrumSelectorKnob";
+import { Separator } from "@/components/ui/separator";
 import { TransportControls } from "@components/TransportControls";
 import { EffectsPanel } from "@components/EffectsPanel";
 import { Button } from "@/components/ui/button";
 import { sampleMap, NUM_STEPS, drumNames } from "@/lib/config";
+
+// it's obviously redundant to have tailwind and custom css, but my aim was just to get this working quickly,
+//Just having fun and testing for now, I didn't care much about the "code quality"
 
 //FIXME: Don't work properly with chrominium-based browsers
 //TODO: Add classic breakbeats patterns
@@ -85,7 +87,7 @@ function SequencerContent() {
       effectChainsRef.current.forEach((effectChain) => {
         effectChain.dispose();
       });
-      effectChainsRef.current.clear();
+      effectChainsRef.current?.clear();
 
       if (playersRef.current) {
         playersRef.current.dispose();
@@ -115,7 +117,11 @@ function SequencerContent() {
   }, [drumEffects, effectsEnabled]);
 
   const startSequencer = () => {
-    if (!isAudioReady || !areSamplesLoaded || isPlaying) {
+    if (!isAudioReady) {
+      Tone.start();
+      dispatch(setIsAudioReady(true));
+    }
+    if (!areSamplesLoaded || isPlaying) {
       console.warn(
         "Cannot start sequencer: Audio not ready, samples not loaded, or already playing.",
       );
@@ -164,12 +170,9 @@ function SequencerContent() {
     dispatch(setCurrentStep(0));
   };
 
-  const handleBpmChange = (newBpm: number) => {
-    dispatch(setBpm(newBpm));
-    if (isPlaying) {
-      Tone.getTransport().bpm.value = newBpm;
-    }
-  };
+  useEffect(() => {
+    Tone.getTransport().bpm.value = bpm;
+  }, [bpm]);
 
   const handleResetPattern = () => {
     stopSequencer();
@@ -203,52 +206,60 @@ function SequencerContent() {
   };
 
   return (
-    <div className="p-4 bg-gray-900 min-h-screen text-white flex flex-col items-center justify-center">
-      <h1 className="text-4xl font-serif-gothic font-bold mb-6 text-orange-500">
-        JS-808
-      </h1>
+    <div
+      className="App"
+      onClick={() => {
+        if (!isAudioReady) {
+          Tone.start();
+          dispatch(setIsAudioReady(true));
+        }
+      }}
+    >
+      {/* {!isAudioReady && ( */}
+      {/*   <Button */}
+      {/*     onClick={async () => { */}
+      {/*       await Tone.start(); */}
+      {/*       dispatch(setIsAudioReady(true)); */}
+      {/*     }} */}
+      {/*   > */}
+      {/*     Start Audio */}
+      {/*   </Button> */}
+      {/* )} */}
+      <div id="drum-machine" className=" items-center container ">
+        <div className="header-title shadow-2xl">
+          <div id="name" className="title">
+            <h1>
+              Rhythm Composer
+              <span>JS-808</span>
+            </h1>
+            <h2>React Controlled</h2>
+          </div>
+          <Separator className="my-4" />
+        </div>
 
-      {!isAudioReady && (
-        <Button
-          onClick={async () => {
-            await Tone.start();
-            dispatch(setIsAudioReady(true));
-          }}
-        >
-          Start Audio
-        </Button>
-      )}
-
-      {areSamplesLoaded && (
-        <>
-          <div className="flex items-center gap-4 mb-4 justify-center">
-            <DrumSelectorKnob />
+        <div className="flex gap-8 mt-8 items-center justify-center shadow-2xl">
+          <div className="flex flex-col shadow-2xl">
             <TransportControls
               onStart={startSequencer}
               onStop={stopSequencer}
               onReset={handleResetPattern}
-              onBpmChange={handleBpmChange}
               isPlaying={isPlaying}
-              currentBpm={bpm}
             />
           </div>
+          {selectedDrum && (
+            <EffectsPanel
+              drumName={selectedDrum}
+              settings={drumEffects[selectedDrum]}
+              onEffectChange={handleEffectChange}
+              onReset={handleResetDrumEffects}
+              onCopyFrom={handleCopyEffects}
+              availableDrums={Object.keys(sampleMap)}
+            />
+          )}
 
-          <div className="flex gap-8 mt-8">
-            <SequencerGrid />
-
-            {selectedDrum && (
-              <EffectsPanel
-                drumName={selectedDrum}
-                settings={drumEffects[selectedDrum]}
-                onEffectChange={handleEffectChange}
-                onReset={handleResetDrumEffects}
-                onCopyFrom={handleCopyEffects}
-                availableDrums={Object.keys(sampleMap)}
-              />
-            )}
-          </div>
-        </>
-      )}
+          <SequencerGrid />
+        </div>
+      </div>
     </div>
   );
 }
